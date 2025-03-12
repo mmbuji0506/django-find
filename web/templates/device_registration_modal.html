@@ -1,0 +1,39 @@
+<div class="modal fade" id="registerDeviceModal" tabindex="-1" role="dialog"
+     aria-labelledby="registerDeviceModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="registerDeviceModalLabel">Register New Device</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'device-list' %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="{{ form.name.id_for_label }}">Device Name:</label>
+                        {{ form.name }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.product_name.id_for_label }}">Product Name:</label>
+                        {{ form.product_name }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.model_name.id_for_label }}">Model Name:</label>
+                        {{ form.model_name }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.serial_number.id_for_label }}">Serial Number:</label>
+                        {{ form.serial_number }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.imei.id_for_label }}">IMEI Number:</label>
+                        {{ form.imei }}
+                    </div>
+                    <button type="submit" class="btn btn-primary">Register</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

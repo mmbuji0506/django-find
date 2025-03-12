@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Device List{% endblock %}
+{% block content %}
+<div class="container">
+    <h2>My Devices</h2>
+    <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#registerDeviceModal">
+        Register Device
+    </button>
+    <ul>
+        {% for device in devices %}
+        <li>
+            {{ device.name }} (Product: {{ device.product_name }}, Model: {{ device.model_name }}, IMEI: {{ device.imei }})
+            <a href="{% url 'device-location' device.id %}">View Location</a>
+        </li>
+        {% empty %}
+            <li>No devices found.</li>
+        {% endfor %}
+    </ul>
+    {% include 'device_registration_modal.html' %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $('#registerDeviceModal').on('show.bs.modal', function (e) {
+            // Clear previous form content (optional, but good practice)
+            $('#registerDeviceModal .modal-body').html('<form method="post" action="{% url 'device-list' %}" id="deviceRegistrationForm">' +
+                '{% csrf_token %}' +
+                '</form>');
+            // Load the form via AJAX
+            $.ajax({
+                url: '{% url "register-device" %}',  // URL to get the form
+                type: 'GET',
+                success: function(data) {
+                    $('#registerDeviceModal .modal-body form').html(data);
+                },
+                error: function() {
+                    alert('Error loading device registration form.');
+                }
+            });
+        });
+    
+        // Handle form submission with AJAX (using event delegation)
+        $(document).on('submit', '#deviceRegistrationForm', function(event) {
+            event.preventDefault();
+            $.ajax({
+                type: 'POST',
+                url: '{% url "device-list" %}',  // Submit to the device list view
+                data: $(this).serialize(),
+                success: function(response) {
+                    $('#registerDeviceModal').modal('hide');
+                    location.reload(); // Reload the page to show the new device
+                },
+                error: function(error) {
+                    console.error("Error registering device:", error);
+                    // Display error messages to the user (e.g., in the modal)
+                    // You'll likely need to parse the error response from the server
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

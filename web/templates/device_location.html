@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Device Location{% endblock %}
+{% block content %}
+<div id="map" style="height: 500px;"></div>
+<script>
+    var map = L.map('map').setView([{{ locations.0.latitude|default:0 }}, {{ locations.0.longitude|default:0 }}], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    var latlngs = [];
+    {% for location in locations %}
+    var marker = L.marker([{{ location.latitude }}, {{ location.longitude }}]).addTo(map);
+    marker.bindPopup("Timestamp: {{ location.timestamp }}<br>Accuracy: {{ location.accuracy }}");
+    latlngs.push([{{ location.latitude }}, {{ location.longitude }}]);
+    {% endfor %}
+
+    if (latlngs.length > 1) {
+        var polyline = L.polyline(latlngs, {color: 'blue'}).addTo(map);
+        map.fitBounds(polyline.getBounds());
+    }
+
+    //button to center map on last location.
+    var lastLocation = latlngs[latlngs.length-1];
+    var centerButton = L.control({position: 'bottomright'});
+    centerButton.onAdd = function (map) {
+        var div = L.DomUtil.create('div', 'my-custom-control');
+        div.innerHTML = '<button onclick="map.setView(['+lastLocation[0]+','+lastLocation[1]+'], 13);">Center</button>';
+        return div;
+    };
+    centerButton.addTo(map);
+
+</script>
+{% endblock %}
