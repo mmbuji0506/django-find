@@ -5,39 +5,296 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Find My Device{% endblock %}</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Google Fonts (Poppins) -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <style>
+        :root {
+            --bg-color: linear-gradient(135deg, #ff6f61, #4a00e0); /* Find-specific gradient */
+            --text-color: #333;
+            --navbar-bg: rgba(255, 255, 255, 0.9);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --card-text: #333;
+            --footer-bg: rgba(0, 0, 0, 0.05);
+            --accent-color: #ff6f61;
+            --btn-gradient: linear-gradient(135deg, #ff6f61, #4a00e0);
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        .dark-mode {
+            --bg-color: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+            --text-color: #e0e0e0;
+            --navbar-bg: rgba(0, 0, 0, 0.9);
+            --card-bg: rgba(0, 0, 0, 0.8);
+            --card-text: #fff;
+            --footer-bg: rgba(255, 255, 255, 0.1);
+            --accent-color: #ff6f61;
+            --btn-gradient: linear-gradient(135deg, #ff6f61, #4a00e0);
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+        }
+
+        .navbar {
+            background: var(--navbar-bg);
+            box-shadow: var(--shadow);
+            padding: 1rem 2rem;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: #333 !important;
+        }
+
+        .dark-mode .navbar-brand {
+            color: #fff !important;
+        }
+
+        .nav-link {
+            color: #333 !important;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .dark-mode .nav-link {
+            color: #fff !important;
+        }
+
+        .nav-link:hover {
+            color: var(--accent-color) !important;
+        }
+
+        .btn-link.nav-link {
+            color: #333 !important;
+        }
+
+        .dark-mode .btn-link.nav-link {
+            color: #fff !important;
+        }
+
+        #read-nav {
+            color: var(--text-color);
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            transition: var(--transition);
+        }
+
+        #read-nav:hover {
+            background: rgba(255, 255, 255, 0.2);
+            text-decoration: none;
+        }
+
+        .container {
+            flex: 1;
+            margin-top: 2rem;
+        }
+
+        footer {
+            margin-top: auto;
+            padding: 1.5rem;
+            text-align: center;
+            background: var(--footer-bg);
+            color: var(--text-color);
+            border-radius: 15px 15px 0 0;
+        }
+
+        footer p {
+            margin: 0;
+        }
+
+        /* Clock Styling */
+        #clock {
+            color: var(--text-color);
+            font-weight: 600;
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.2);
+            transition: var(--transition);
+        }
+
+        .dark-mode #clock {
+            background: rgba(0, 0, 0, 0.2);
+            color: #fff;
+        }
+
+        @media (max-width: 576px) {
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+            .nav-link {
+                font-size: 0.9rem;
+            }
+            #clock {
+                font-size: 0.9rem;
+                padding: 0.3rem 0.8rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="{% url 'home' %}">Find My Device</a>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
-                <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
-                {% if user.is_authenticated %}
-                    <li class="nav-item"><a class="nav-link" href="{% url 'device-list' %}">Devices</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
-                {% else %}
-                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'register' %}">Register</a></li>
-                {% endif %}
-            </ul>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}"><i class="fas fa-map-marker-alt"></i> Find</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'home' %}">Home</a>
+                    </li>
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'device-list' %}">Devices</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'register' %}">Register</a>
+                        </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="read-nav"><i class="fas fa-headphones"></i> Read Navigation</a>
+                    </li>
+                    <li class="nav-item">
+                        <span id="clock"></span>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn btn-link nav-link" onclick="toggleDarkMode()" id="theme-toggle">
+                            <i id="theme-icon" class="fas fa-moon"></i>
+                            <span id="theme-text">Dark Mode</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
         </div>
     </nav>
-    <div class="container mt-4">
+
+    <div class="container">
         {% block content %}{% endblock %}
     </div>
-    <footer class="mt-5 text-center">
-        <p>&copy; {{ year }} Find My Device. All rights reserved.</p>
+
+    <!-- Footer -->
+    <footer>
+        <p>© {{ year }} Crafted with ❤️ by Josam Eneza Mmbuji.</p>
     </footer>
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
     <script src="{% static 'js/scripts.js' %}"></script>
+    <!-- Dark Mode, Clock, and Narrator Script -->
+    <script>
+        function toggleDarkMode() {
+            const body = document.body;
+            body.classList.toggle('dark-mode');
+            const isDarkMode = body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDarkMode);
+    
+            const icon = document.getElementById('theme-icon');
+            const text = document.getElementById('theme-text');
+            if (isDarkMode) {
+                icon.classList.replace('fa-moon', 'fa-sun');
+                text.textContent = 'Light Mode';
+            } else {
+                icon.classList.replace('fa-sun', 'fa-moon');
+                text.textContent = 'Dark Mode';
+            }
+    
+            // Dispatch custom event for map theme updates
+            const darkModeEvent = new Event('darkModeToggle');
+            document.dispatchEvent(darkModeEvent);
+        }
+
+        // Initialize theme on load
+        document.addEventListener('DOMContentLoaded', function() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            if (isDarkMode) {
+                document.body.classList.add('dark-mode');
+                document.getElementById('theme-icon').classList.replace('fa-moon', 'fa-sun');
+                document.getElementById('theme-text').textContent = 'Light Mode';
+            }
+        });
+
+        // Clock functionality
+        function updateClock() {
+            const options = {
+                timeZone: 'Africa/Dar_es_Salaam',
+                hour12: false,  // 24-hour format
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', options);
+            document.getElementById('clock').textContent = timeString;
+        }
+    
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // Narrator functionality for navigation
+        document.addEventListener("DOMContentLoaded", function() {
+            const readNavButton = document.getElementById("read-nav");
+            if (readNavButton) {
+                readNavButton.addEventListener("click", function(event) {
+                    event.preventDefault();
+                    readNavigation();
+                });
+            }
+        });
+
+        function readNavigation() {
+            const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
+            let navText = "Navigation options for Find My Device: ";
+            navLinks.forEach((link, index) => {
+                if (link.id !== 'read-nav') { // Skip the "Read Navigation" link itself
+                    navText += `${link.innerText}${index < navLinks.length - 2 ? ', ' : ''}`;
+                }
+            });
+            navText += ".";
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+
+                const speech = new SpeechSynthesisUtterance(navText);
+                speech.lang = "en-US";
+                speech.rate = 1.0;
+                speech.pitch = 1.0;
+                const voices = window.speechSynthesis.getVoices();
+                speech.voice = voices.find(voice => voice.lang === "en-US") || voices[0];
+
+                window.speechSynthesis.speak(speech);
+            } else {
+                alert("Text-to-Speech is not supported in this browser.");
+            }
+        }
+
+        window.speechSynthesis.onvoiceschanged = function() {
+            const voices = window.speechSynthesis.getVoices();
+        };
+    </script>
 </body>
 </html>

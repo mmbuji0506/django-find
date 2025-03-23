@@ -1,32 +1,285 @@
 {% extends 'base.html' %}
-{% block title %}Device Location{% endblock %}
-{% block content %}
-<div id="map" style="height: 500px;"></div>
-<script>
-    var map = L.map('map').setView([{{ locations.0.latitude|default:0 }}, {{ locations.0.longitude|default:0 }}], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+{% block title %}Device Location - Find My Device{% endblock %}
 
-    var latlngs = [];
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Device Location: {{ device.name }}</h2>
+        <button class="btn btn-secondary" id="read-location-details"><i class="fas fa-headphones"></i> Hear Location Details</button>
+    </div>
+
+    <div class="row">
+        <!-- Map Section -->
+        <div class="col-md-8 mb-4">
+            <div id="map" class="rounded-3 shadow" style="height: 500px;"></div>
+        </div>
+
+        <!-- Location History Section -->
+        <div class="col-md-4">
+            <div class="location-history p-4 rounded-3">
+                <h5>Location History</h5>
+                {% if locations %}
+                <ul class="list-group">
+                    {% for location in locations %}
+                    <li class="list-group-item">
+                        <strong>Timestamp:</strong> {{ location.timestamp }}<br>
+                        <strong>Latitude:</strong> {{ location.latitude }}<br>
+                        <strong>Longitude:</strong> {{ location.longitude }}<br>
+                        <strong>Accuracy:</strong> {{ location.accuracy }} meters
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">No location history available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Back to Device List -->
+    <div class="mt-4">
+        <a href="{% url 'device-list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Back to Device List
+        </a>
+    </div>
+</div>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<style>
+    #map {
+        animation: fadeIn 0.7s ease-in-out;
+    }
+
+    .location-history {
+        background: var(--card-bg);
+        color: var(--card-text);
+        box-shadow: var(--shadow);
+        animation: fadeInUp 0.7s ease-in-out;
+    }
+
+    .dark-mode .location-history {
+        background: var(--card-bg);
+        color: var(--card-text);
+    }
+
+    .list-group-item {
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        color: var(--card-text);
+    }
+
+    .dark-mode .list-group-item {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--card-text);
+    }
+
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: var(--transition);
+        color: var(--text-color);
+    }
+
+    .dark-mode .btn-secondary {
+        background: rgba(0, 0, 0, 0.2);
+        color: var(--text-color);
+    }
+
+    .btn-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow);
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    .dark-mode .btn-secondary:hover {
+        background: rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-outline-primary {
+        border-color: var(--accent-color);
+        color: var(--accent-color);
+        border-radius: 25px;
+        transition: var(--transition);
+    }
+
+    .dark-mode .btn-outline-primary {
+        border-color: #ffdd57;
+        color: #ffdd57;
+    }
+
+    .btn-outline-primary:hover {
+        background: var(--accent-color);
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow);
+    }
+
+    .dark-mode .btn-outline-primary:hover {
+        background: #ffdd57;
+        color: #333;
+    }
+
+    .leaflet-control.my-custom-control button {
+        background: var(--btn-gradient);
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        color: #fff;
+        font-weight: 600;
+        transition: var(--transition);
+    }
+
+    .leaflet-control.my-custom-control button:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow);
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+        #map {
+            height: 400px;
+        }
+        .location-history {
+            margin-top: 1rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        h2 {
+            font-size: 1.5rem;
+        }
+        .btn-secondary, .btn-outline-primary {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        #map {
+            height: 300px;
+        }
+    }
+</style>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // Initialize the map
+    const map = L.map('map').setView([{{ locations.0.latitude|default:0 }}, {{ locations.0.longitude|default:0 }}], 13);
+
+    // Tile layer based on theme
+    const lightTile = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    const darkTile = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+    let currentTile = localStorage.getItem('darkMode') === 'true' ? darkTile : lightTile;
+
+    L.tileLayer(currentTile, {
+        attribution: localStorage.getItem('darkMode') === 'true' ? 
+            '&copy; <a href="https://carto.com/attributions">CARTO</a>' : 
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    // Update map theme on dark mode toggle
+    document.addEventListener('darkModeToggle', function() {
+        const isDarkMode = localStorage.getItem('darkMode') === 'true';
+        const newTile = isDarkMode ? darkTile : lightTile;
+        if (newTile !== currentTile) {
+            map.eachLayer(layer => {
+                if (layer instanceof L.TileLayer) {
+                    map.removeLayer(layer);
+                }
+            });
+            L.tileLayer(newTile, {
+                attribution: isDarkMode ? 
+                    '&copy; <a href="https://carto.com/attributions">CARTO</a>' : 
+                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+            currentTile = newTile;
+        }
+    });
+
+    // Add markers and polyline
+    const latlngs = [];
     {% for location in locations %}
-    var marker = L.marker([{{ location.latitude }}, {{ location.longitude }}]).addTo(map);
-    marker.bindPopup("Timestamp: {{ location.timestamp }}<br>Accuracy: {{ location.accuracy }}");
+    const marker = L.marker([{{ location.latitude }}, {{ location.longitude }}]).addTo(map);
+    marker.bindPopup("Timestamp: {{ location.timestamp }}<br>Accuracy: {{ location.accuracy }} meters");
     latlngs.push([{{ location.latitude }}, {{ location.longitude }}]);
     {% endfor %}
 
     if (latlngs.length > 1) {
-        var polyline = L.polyline(latlngs, {color: 'blue'}).addTo(map);
+        const polyline = L.polyline(latlngs, { color: 'var(--accent-color)' }).addTo(map);
         map.fitBounds(polyline.getBounds());
     }
 
-    //button to center map on last location.
-    var lastLocation = latlngs[latlngs.length-1];
-    var centerButton = L.control({position: 'bottomright'});
+    // Center button for last location
+    const lastLocation = latlngs[latlngs.length - 1] || [0, 0];
+    const centerButton = L.control({ position: 'bottomright' });
     centerButton.onAdd = function (map) {
-        var div = L.DomUtil.create('div', 'my-custom-control');
-        div.innerHTML = '<button onclick="map.setView(['+lastLocation[0]+','+lastLocation[1]+'], 13);">Center</button>';
+        const div = L.DomUtil.create('div', 'leaflet-control my-custom-control');
+        div.innerHTML = '<button onclick="map.setView([' + lastLocation[0] + ',' + lastLocation[1] + '], 13);">Center on Last Location</button>';
         return div;
     };
     centerButton.addTo(map);
 
+    // Narrator functionality
+    document.addEventListener("DOMContentLoaded", function() {
+        const readLocationButton = document.getElementById("read-location-details");
+        if (readLocationButton) {
+            readLocationButton.addEventListener("click", function() {
+                readLocationDetails();
+            });
+        }
+    });
+
+    function readLocationDetails() {
+        const deviceName = "{{ device.name }}";
+        const locations = document.querySelectorAll('.list-group-item');
+        let locationText = `Location details for device ${deviceName}: `;
+        
+        if (locations.length === 0) {
+            locationText += "No location history available.";
+        } else {
+            locationText += `${locations.length} location${locations.length > 1 ? 's' : ''} recorded. `;
+            locations.forEach((location, index) => {
+                const timestamp = location.querySelector('strong:nth-child(1)')?.nextSibling.textContent.trim();
+                const latitude = location.querySelector('strong:nth-child(3)')?.nextSibling.textContent.trim();
+                const longitude = location.querySelector('strong:nth-child(5)')?.nextSibling.textContent.trim();
+                const accuracy = location.querySelector('strong:nth-child(7)')?.nextSibling.textContent.trim();
+                locationText += `Location ${index + 1}: Recorded at ${timestamp}, Latitude: ${latitude}, Longitude: ${longitude}, Accuracy: ${accuracy}${index < locations.length - 1 ? '; ' : '.'}`;
+            });
+        }
+
+        locationText += " You can center the map on the last location using the Center button.";
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+
+            const speech = new SpeechSynthesisUtterance(locationText);
+            speech.lang = "en-US";
+            speech.rate = 1.0;
+            speech.pitch = 1.0;
+            const voices = window.speechSynthesis.getVoices();
+            speech.voice = voices.find(voice => voice.lang === "en-US") || voices[0];
+
+            window.speechSynthesis.speak(speech);
+        } else {
+            alert("Text-to-Speech is not supported in this browser.");
+        }
+    }
+
+    window.speechSynthesis.onvoiceschanged = function() {
+        const voices = window.speechSynthesis.getVoices();
+    };
 </script>
 {% endblock %}

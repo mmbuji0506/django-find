@@ -1,64 +1,247 @@
 {% extends 'base.html' %}
-{% block title %}Device List{% endblock %}
+{% block title %}Device List - Find My Device{% endblock %}
+
 {% block content %}
-<div class="container">
-    <h2>My Devices</h2>
-    <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#registerDeviceModal">
-        Register Device
-    </button>
-    <ul>
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>My Devices</h2>
+        <div>
+            <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#registerDeviceModal">
+                <i class="fas fa-plus"></i> Register Device
+            </button>
+            <button class="btn btn-secondary" id="read-device-list"><i class="fas fa-headphones"></i> Hear Device List</button>
+        </div>
+    </div>
+
+    {% if devices %}
+    <div class="row g-4">
         {% for device in devices %}
-        <li>
-            {{ device.name }} (Product: {{ device.product_name }}, Model: {{ device.model_name }}, IMEI: {{ device.imei }})
-            <a href="{% url 'device-location' device.id %}">View Location</a>
-        </li>
-        {% empty %}
-            <li>No devices found.</li>
+        <div class="col-md-6 col-lg-4">
+            <div class="device-card p-4 rounded-3">
+                <h5>{{ device.name }}</h5>
+                <p class="mb-1"><strong>Product:</strong> {{ device.product_name }}</p>
+                <p class="mb-1"><strong>Model:</strong> {{ device.model_name }}</p>
+                <p class="mb-3"><strong>IMEI:</strong> {{ device.imei }}</p>
+                <a href="{% url 'device-location' device.id %}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-map-marker-alt"></i> View Location
+                </a>
+            </div>
+        </div>
         {% endfor %}
-    </ul>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center" role="alert">
+        No devices found. Register a device to get started!
+    </div>
+    {% endif %}
+
     {% include 'device_registration_modal.html' %}
 </div>
-{% endblock %}
 
-{% block scripts %}
+<style>
+    .device-card {
+        background: var(--card-bg);
+        color: var(--card-text);
+        box-shadow: var(--shadow);
+        transition: var(--transition);
+        animation: fadeInUp 0.7s ease-in-out;
+    }
+
+    .device-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow);
+    }
+
+    .btn-primary {
+        background: var(--btn-gradient);
+        border: none;
+        padding: 0.5rem 1.5rem;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: var(--transition);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow);
+    }
+
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: var(--transition);
+        color: var(--text-color);
+    }
+
+    .dark-mode .btn-secondary {
+        background: rgba(0, 0, 0, 0.2);
+        color: var(--text-color);
+    }
+
+    .btn-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow);
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    .dark-mode .btn-secondary:hover {
+        background: rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-outline-primary {
+        border-color: var(--accent-color);
+        color: var(--accent-color);
+        border-radius: 25px;
+        transition: var(--transition);
+    }
+
+    .dark-mode .btn-outline-primary {
+        border-color: #ffdd57;
+        color: #ffdd57;
+    }
+
+    .btn-outline-primary:hover {
+        background: var(--accent-color);
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow);
+    }
+
+    .dark-mode .btn-outline-primary:hover {
+        background: #ffdd57;
+        color: #333;
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 576px) {
+        h2 {
+            font-size: 1.5rem;
+        }
+        .btn-primary, .btn-secondary {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        .device-card {
+            padding: 1.5rem;
+        }
+    }
+</style>
+
 <script>
-    $(document).ready(function() {
-        $('#registerDeviceModal').on('show.bs.modal', function (e) {
-            // Clear previous form content (optional, but good practice)
-            $('#registerDeviceModal .modal-body').html('<form method="post" action="{% url 'device-list' %}" id="deviceRegistrationForm">' +
-                '{% csrf_token %}' +
-                '</form>');
-            // Load the form via AJAX
-            $.ajax({
-                url: '{% url "register-device" %}',  // URL to get the form
-                type: 'GET',
-                success: function(data) {
-                    $('#registerDeviceModal .modal-body form').html(data);
-                },
-                error: function() {
-                    alert('Error loading device registration form.');
-                }
-            });
-        });
+    document.addEventListener("DOMContentLoaded", function() {
+        // Modal form loading
+        const registerDeviceModal = document.getElementById('registerDeviceModal');
+        if (registerDeviceModal) {
+            registerDeviceModal.addEventListener('show.bs.modal', function () {
+                const formFieldsContainer = registerDeviceModal.querySelector('#device-form-fields');
+                formFieldsContainer.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
     
-        // Handle form submission with AJAX (using event delegation)
-        $(document).on('submit', '#deviceRegistrationForm', function(event) {
-            event.preventDefault();
-            $.ajax({
-                type: 'POST',
-                url: '{% url "device-list" %}',  // Submit to the device list view
-                data: $(this).serialize(),
-                success: function(response) {
-                    $('#registerDeviceModal').modal('hide');
-                    location.reload(); // Reload the page to show the new device
-                },
-                error: function(error) {
-                    console.error("Error registering device:", error);
-                    // Display error messages to the user (e.g., in the modal)
-                    // You'll likely need to parse the error response from the server
-                }
+                fetch("{% url 'register-device' %}", {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.text())
+                .then(data => {
+                    formFieldsContainer.innerHTML = data;
+                })
+                .catch(() => {
+                    formFieldsContainer.innerHTML = '<div class="alert alert-danger" role="alert">Error loading device registration form.</div>';
+                });
             });
+        }
+
+        // Handle form submission with fetch API
+        document.addEventListener('submit', function(event) {
+            if (event.target.matches('#deviceRegistrationForm')) {
+                event.preventDefault();
+                const form = event.target;
+                const submitButton = form.querySelector('button[type="submit"]');
+                const originalButtonText = submitButton.innerHTML;
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Registering...';
+
+                fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => { throw new Error(text); });
+                    }
+                    return response.text();
+                })
+                .then(() => {
+                    const modal = bootstrap.Modal.getInstance(registerDeviceModal);
+                    modal.hide();
+                    location.reload();
+                })
+                .catch(error => {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonText;
+                    const errorMessage = error.message.includes('form') ? error.message : 'Error registering device. Please try again.';
+                    const modalBody = registerDeviceModal.querySelector('.modal-body');
+                    modalBody.insertAdjacentHTML('afterbegin', `<div class="alert alert-danger alert-dismissible fade show" role="alert">${errorMessage}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`);
+                });
+            }
         });
+
+        // Narrator functionality
+        const readDeviceListButton = document.getElementById("read-device-list");
+        if (readDeviceListButton) {
+            readDeviceListButton.addEventListener("click", function() {
+                readDeviceList();
+            });
+        }
     });
+
+    function readDeviceList() {
+        const devices = document.querySelectorAll('.device-card');
+        let deviceText = "Here is your device list for Find My Device: ";
+        
+        if (devices.length === 0) {
+            deviceText += "No devices found. You can register a new device by pressing the Register Device button.";
+        } else {
+            deviceText += `${devices.length} device${devices.length > 1 ? 's' : ''} found. `;
+            devices.forEach((device, index) => {
+                const name = device.querySelector('h5')?.innerText;
+                const product = device.querySelector('p:nth-child(2)')?.innerText.replace('Product: ', '');
+                const model = device.querySelector('p:nth-child(3)')?.innerText.replace('Model: ', '');
+                const imei = device.querySelector('p:nth-child(4)')?.innerText.replace('IMEI: ', '');
+                deviceText += `Device ${index + 1}: ${name}, Product: ${product}, Model: ${model}, IMEI: ${imei}${index < devices.length - 1 ? '; ' : '.'}`;
+            });
+            deviceText += " Select View Location to see a device's location on the map.";
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+
+            const speech = new SpeechSynthesisUtterance(deviceText);
+            speech.lang = "en-US";
+            speech.rate = 1.0;
+            speech.pitch = 1.0;
+            const voices = window.speechSynthesis.getVoices();
+            speech.voice = voices.find(voice => voice.lang === "en-US") || voices[0];
+
+            window.speechSynthesis.speak(speech);
+        } else {
+            alert("Text-to-Speech is not supported in this browser.");
+        }
+    }
+
+    window.speechSynthesis.onvoiceschanged = function() {
+        const voices = window.speechSynthesis.getVoices();
+    };
 </script>
 {% endblock %}

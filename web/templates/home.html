@@ -1,28 +1,179 @@
 {% extends 'base.html' %}
-{% block title %}Home{% endblock %}
+{% block title %}Home - Find My Device{% endblock %}
 {% block content %}
-<div class="jumbotron">
-    <h1>Find Your Devices Easily</h1>
-    <p>Keep track of your devices with our powerful tracking solution.</p>
-    {% if not user.is_authenticated %}
-    <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Get Started</a>
-    {% endif %}
+<div class="container py-5">
+    <!-- Hero Section (Jumbotron) -->
+    <div class="jumbotron text-center p-5 mb-5 rounded-3" id="hero-section">
+        <h1 class="display-4" id="hero-title">Find Your Devices Easily</h1>
+        <p class="lead" id="hero-description">Keep track of your devices with our powerful tracking solution.</p>
+        {% if not user.is_authenticated %}
+        <a href="{% url 'register' %}" class="btn btn-primary btn-lg mt-3">Get Started</a>
+        {% endif %}
+        <button class="btn btn-secondary btn-lg mt-3 ms-2" id="read-content"><i class="fas fa-headphones"></i> Hear About Find</button>
+    </div>
+
+    <!-- Features Section -->
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="feature-card p-4 text-center rounded-3">
+                <i class="fas fa-map-marker-alt fa-3x mb-3"></i>
+                <h3>Real-Time Tracking</h3>
+                <p>Track your devices in real-time on a map.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card p-4 text-center rounded-3">
+                <i class="fas fa-lock fa-3x mb-3"></i>
+                <h3>Remote Lock & Wipe</h3>
+                <p>Secure your data with remote lock and wipe features.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card p-4 text-center rounded-3">
+                <i class="fas fa-bell fa-3x mb-3"></i>
+                <h3>Notifications & Alerts</h3>
+                <p>Receive alerts for important events.</p>
+            </div>
+        </div>
+    </div>
 </div>
-<div class="row">
-    <div class="col-md-4">
-        <i class="fas fa-map-marker-alt fa-3x"></i>
-        <h3>Real-Time Tracking</h3>
-        <p>Track your devices in real-time on a map.</p>
-    </div>
-    <div class="col-md-4">
-        <i class="fas fa-lock fa-3x"></i>
-        <h3>Remote Lock & Wipe</h3>
-        <p>Secure your data with remote lock and wipe features.</p>
-    </div>
-    <div class="col-md-4">
-        <i class="fas fa-bell fa-3x"></i>
-        <h3>Notifications & Alerts</h3>
-        <p>Receive alerts for important events.</p>
-    </div>
-</div>
+
+<style>
+    .jumbotron {
+        background: var(--card-bg);
+        color: var(--card-text);
+        box-shadow: var(--shadow);
+        animation: fadeInDown 0.7s ease-in-out;
+    }
+
+    .dark-mode .jumbotron {
+        background: var(--card-bg);
+        color: var(--card-text);
+    }
+
+    .btn-primary {
+        background: var(--btn-gradient);
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: var(--transition);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow);
+    }
+
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: var(--transition);
+        color: var(--card-text);
+    }
+
+    .dark-mode .btn-secondary {
+        background: rgba(0, 0, 0, 0.2);
+        color: var(--card-text);
+    }
+
+    .btn-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow);
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    .dark-mode .btn-secondary:hover {
+        background: rgba(0, 0, 0, 0.3);
+    }
+
+    .feature-card {
+        background: var(--card-bg);
+        color: var(--card-text);
+        box-shadow: var(--shadow);
+        transition: var(--transition);
+        animation: fadeInUp 0.7s ease-in-out;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow);
+    }
+
+    .feature-card i {
+        color: var(--accent-color);
+    }
+
+    @keyframes fadeInDown {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 576px) {
+        .jumbotron {
+            padding: 2rem;
+        }
+        .display-4 {
+            font-size: 2rem;
+        }
+        .lead {
+            font-size: 1rem;
+        }
+        .btn-lg {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const readContentButton = document.getElementById("read-content");
+        if (readContentButton) {
+            readContentButton.addEventListener("click", function() {
+                readPageContent();
+            });
+        }
+    });
+
+    function readPageContent() {
+        const title = document.getElementById('hero-title')?.innerText;
+        const description = document.getElementById('hero-description')?.innerText;
+        const features = document.querySelectorAll('.feature-card');
+
+        let contentText = `${title}. ${description}. Here are the key features of Find My Device: `;
+        features.forEach((feature, index) => {
+            const featureTitle = feature.querySelector('h3')?.innerText;
+            const featureDescription = feature.querySelector('p')?.innerText;
+            contentText += `${featureTitle}: ${featureDescription}${index < features.length - 1 ? ', ' : '.'}`;
+        });
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+
+            const speech = new SpeechSynthesisUtterance(contentText);
+            speech.lang = "en-US";
+            speech.rate = 1.0;
+            speech.pitch = 1.0;
+            const voices = window.speechSynthesis.getVoices();
+            speech.voice = voices.find(voice => voice.lang === "en-US") || voices[0];
+
+            window.speechSynthesis.speak(speech);
+        } else {
+            alert("Text-to-Speech is not supported in this browser.");
+        }
+    }
+
+    window.speechSynthesis.onvoiceschanged = function() {
+        const voices = window.speechSynthesis.getVoices();
+    };
+</script>
 {% endblock %}

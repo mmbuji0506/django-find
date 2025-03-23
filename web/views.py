@@ -36,9 +36,57 @@ def user_logout(request):
 
 @login_required
 def register_device(request):
-    form = DeviceRegistrationForm()
-    return render(request, 'device_registration_form.html', {'form': form})
+    if request.method == 'GET':
+        form = DeviceRegistrationForm()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            form_html = ''
+            for field in form:
+                form_html += f'''
+                    <div class="form-group mb-3">
+                        <label for="{field.id_for_label}" class="form-label">{field.label}</label>
+                        <div class="input-group">
+                            {str(field)}
+                        </div>
+                        {''.join(f'<div class="alert alert-danger mt-2" role="alert">{error}</div>' for error in field.errors)}
+                    </div>
+                '''
+            form_html += '''
+                <button type="submit" class="btn btn-primary w-100">Register Device</button>
+            '''
+            return HttpResponse(form_html)
+        else:
+            return render(request, 'register_device.html', {'form': form})
 
+    elif request.method == 'POST':
+        form = DeviceRegistrationForm(request.POST)
+        if form.is_valid():
+            device = form.save(commit=False)
+            device.user = request.user
+            device.save()
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return HttpResponse(status=200)
+            else:
+                return redirect('device-list')
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                form_html = ''
+                for field in form:
+                    form_html += f'''
+                        <div class="form-group mb-3">
+                            <label for="{field.id_for_label}" class="form-label">{field.label}</label>
+                            <div class="input-group">
+                                {str(field)}
+                            </div>
+                            {''.join(f'<div class="alert alert-danger mt-2" role="alert">{error}</div>' for error in field.errors)}
+                        </div>
+                    '''
+                form_html += '''
+                    <button type="submit" class="btn btn-primary w-100">Register Device</button>
+                '''
+                return HttpResponse(form_html, status=400)
+            else:
+                return render(request, 'register_device.html', {'form': form})
+            
 @login_required
 def device_list(request):
     devices = Device.objects.filter(user=request.user)
